@@ -308,7 +308,7 @@ const animateProgress = (fromValue: number, toValue: number, duration: number) =
 
 // Watchers
 watch(() => props.modelValue, (newValue, oldValue) => {
-  const normalizedOld = ((oldValue - props.min) / (props.max - props.min)) * 100 || 0;
+  const normalizedOld = ((oldValue ?? 0) - props.min) / (props.max - props.min) * 100;
   const normalizedNew = ((newValue - props.min) / (props.max - props.min)) * 100 || 0;
   
   animateProgress(normalizedOld, normalizedNew, props.animationDuration);

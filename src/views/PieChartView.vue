@@ -225,15 +225,25 @@ const handleSubmit = () => {
 };
 
 const editItem = (index: number) => {
+  const item = chartData.value[index];
+  
+  formData.value = {
+    label: item?.label ?? '',
+    value: item?.value ?? 0,
+    color: item?.color ?? '#3b82f6',
+  };
   editingIndex.value = index;
-  formData.value = { ...chartData.value[index] };
 };
 
 const removeItem = (index: number) => {
+  // Проверяем индекс
+  if (index < 0 || index >= chartData.value.length) return;
+  
   if (editingIndex.value === index) {
     editingIndex.value = null;
     resetForm();
   }
+  
   chartData.value.splice(index, 1);
 };
 

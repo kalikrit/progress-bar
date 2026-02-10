@@ -272,11 +272,15 @@ const statusExamples = ref([
 // Interactive playground
 const playground = ref({
   progress: 65,
-  status: 'inProgress' as const,
-  type: 'circle' as const,
+  status: 'inProgress' as 'inProgress' | 'success' | 'warning' | 'error',
+  type: 'circle' as 'circle' | 'dashboard',
   showText: true,
   showIcon: false,
 });
+
+const setPlaygroundType = (type: 'circle' | 'dashboard') => {
+  playground.value.type = type;
+};
 
 const statusOptions = ['inProgress', 'success', 'warning', 'error'] as const;
 const typeOptions = ['circle', 'dashboard'] as const;
