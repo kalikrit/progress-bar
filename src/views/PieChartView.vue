@@ -1,8 +1,8 @@
 <template>
   <div class="pie-chart-page">
     <header class="header">
-      <h1 class="title">Interactive Pie Chart</h1>
-      <p class="subtitle">Add, edit and remove data points in real-time</p>
+      <h1 class="title">Интерактивная круговая диаграмма</h1>
+      <p class="subtitle">Добавляйте, редактруйте сектора</p>
     </header>
 
     <main class="main-content">
@@ -180,11 +180,11 @@ interface ChartItem {
 
 // Реактивные данные
 const chartData = ref<ChartItem[]>([
-  { label: 'Marketing', value: 30, color: '#3b82f6' },
-  { label: 'Sales', value: 25, color: '#10b981' },
-  { label: 'Development', value: 20, color: '#f59e0b' },
-  { label: 'Support', value: 15, color: '#ef4444' },
-  { label: 'Other', value: 10, color: '#8b5cf6' },
+  { label: 'Маркетинг', value: 30, color: '#3b82f6' },
+  { label: 'Продажи', value: 25, color: '#10b981' },
+  { label: 'Разработка', value: 20, color: '#f59e0b' },
+  { label: 'Поддержка', value: 15, color: '#ef4444' },
+  { label: 'Другое', value: 10, color: '#8b5cf6' },
 ]);
 
 const formData = ref<ChartItem>({

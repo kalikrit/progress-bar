@@ -18,7 +18,7 @@ import { RouterView } from 'vue-router';
 }
 
 .navbar {
-  background: rgba(255, 255, 255, 0.1);
+  background: #006494;
   backdrop-filter: blur(10px);
   padding: 1rem 2rem;
   display: flex;

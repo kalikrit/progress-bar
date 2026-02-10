@@ -1,14 +1,14 @@
 <template>
   <div class="home">
     <header class="header">
-      <h1 class="title">Vue 3 Circular Progress Bar</h1>
-      <p class="subtitle">Advanced, customizable progress indicator component</p>
+      <h1 class="title">Vue 3 Круговой Прогресс Бар</h1>
+      <p class="subtitle">Продвинутый, настраиваемый компонент индикатора прогресса</p>
     </header>
 
     <main class="main-content">
       <!-- Basic Examples -->
       <section class="demo-section">
-        <h2>Basic Examples</h2>
+        <h2>Основные Примеры</h2>
         <div class="examples">
           <div class="example-card">
             <h3>Default Progress Bar</h3>
@@ -52,7 +52,7 @@
 
       <!-- Status Examples -->
       <section class="demo-section">
-        <h2>Status Examples</h2>
+        <h2>Примеры Состояний</h2>
         <div class="status-grid">
           <div 
             v-for="statusExample in statusExamples" 
@@ -78,7 +78,7 @@
 
       <!-- Interactive Playground -->
       <section class="demo-section">
-        <h2>Interactive Playground</h2>
+        <h2>Интерактивная Песочница</h2>
         <div class="playground">
           <div class="playground-controls">
             <div class="control-group">
@@ -173,7 +173,7 @@
 
       <!-- Status Icons Showcase -->
       <section class="demo-section">
-        <h2>Status Icons Showcase</h2>
+        <h2>Демонстрация Иконок Состояний</h2>
         <div class="icons-showcase">
           <div class="icon-example">
             <h3>Success (100%)</h3>
