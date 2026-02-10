@@ -1,620 +1,929 @@
 <template>
-  <div class="pie-chart-page">
+  <div class="pie-chart-container">
+    <!-- Верхний блок с заголовком -->
     <header class="header">
-      <h1 class="title">Интерактивная круговая диаграмма</h1>
-      <p class="subtitle">Добавляйте, редактруйте сектора</p>
+      <h1 class="title">Круговая диаграмма</h1>
     </header>
 
-    <main class="main-content">
-      <div class="dashboard">
-        <!-- Левая колонка: Форма и список -->
-        <div class="left-section">
-          <!-- Форма -->
-          <div class="form-card">
-            <h2 class="form-title">
-              {{ editingIndex !== null ? 'Редактирование' : 'Добавление сектора' }}
-            </h2>
-            
-            <form @submit.prevent="handleSubmit" class="data-form">
-              <div class="form-group">
-                <label for="label" class="form-label">Нименование</label>
-                <input
-                  id="label"
-                  v-model="formData.label"
-                  type="text"
-                  class="form-input"
-                  placeholder="Enter label"
-                  required
-                />
-              </div>
-
-              <div class="form-group">
-                <label for="value" class="form-label">Значение</label>
-                <input
-                  id="value"
-                  v-model.number="formData.value"
-                  type="number"
-                  class="form-input"
-                  placeholder="Enter value"
-                  min="1"
-                  required
-                />
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Цвет</label>
-                <div class="color-picker-wrapper">
-                  <div 
-                    class="color-preview"
-                    :style="{ backgroundColor: formData.color }"
-                  />
-                  <input
-                    v-model="formData.color"
-                    type="color"
-                    class="color-input-native"
-                    title="Choose color"
-                  />
-                  <input
-                    v-model="formData.color"
-                    type="text"
-                    class="form-input color-input"
-                    placeholder="#3b82f6"
-                  />
-                </div>
-              </div>
-
-              <div class="form-actions">
-                <button type="submit" class="btn btn-primary">
-                  {{ editingIndex !== null ? 'Редактировать' : 'Добавить сектор' }}
-                </button>
-                
-                <button 
-                  v-if="editingIndex !== null"
-                  type="button" 
-                  @click="cancelEdit"
-                  class="btn btn-secondary"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-
-          <!-- Список элементов -->
-          <div class="list-card">
-            <h3 class="list-title">Сектора ({{ chartData.length }})</h3>
-            
-            <div v-if="chartData.length === 0" class="empty-state">
-              <p>No data added yet. Start by adding your first item!</p>
+    <!-- Основное содержимое: две колонки -->
+    <div class="content-wrapper">
+      <!-- ЛЕВАЯ КОЛОНКА: Список секторов -->
+      <div class="left-column">
+        <div class="sectors-list">
+          <div 
+            v-for="(sector, index) in sectors" 
+            :key="sector.id" 
+            class="sector-row"
+          >
+            <!-- Левая часть: название, процент, цвет с разделителями -->
+            <div class="sector-left">
+              <span class="sector-name">{{ sector.name }}</span>
+              
+              <!-- Вертикальный разделитель 1 -->
+              <div class="vertical-divider"></div>
+              
+              <span class="sector-percentage">{{ sector.percentage }}%</span>
+              
+              <!-- Вертикальный разделитель 2 -->
+              <div class="vertical-divider"></div>
+              
+              <div 
+                class="color-circle" 
+                :style="{ backgroundColor: sector.color }"
+              ></div>
             </div>
             
-            <div v-else class="items-list">
-              <div 
-                v-for="(item, index) in chartData" 
-                :key="index"
-                class="list-item"
-                :class="{ 'is-editing': editingIndex === index }"
+            <!-- Правая часть: иконки действий -->
+            <div class="sector-right">
+              <button 
+                @click="openEditModal(sector)"
+                class="icon-btn edit-btn"
+                title="Редактировать"
               >
-                <div class="item-info">
-                  <div class="item-color" :style="{ backgroundColor: item.color }" />
-                  <div class="item-details">
-                    <span class="item-label">{{ item.label }}</span>
-                    <span class="item-value">{{ item.value }}</span>
-                  </div>
-                </div>
-                
-                <div class="item-actions">
-                  <button 
-                    @click="editItem(index)"
-                    class="btn-icon btn-edit"
-                    title="Edit"
-                  >
-                    ✏️
-                  </button>
-                  <button 
-                    @click="removeItem(index)"
-                    class="btn-icon btn-delete"
-                    title="Delete"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </div>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M14.06 9.02L14.98 9.94L5.92 19H5V18.08L14.06 9.02ZM17.66 3C17.41 3 17.15 3.1 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C18.17 3.09 17.92 3 17.66 3ZM14.06 6.19L3 17.25V21H6.75L17.81 9.94L14.06 6.19Z" fill="#666"/>
+                </svg>
+              </button>
+              <button 
+                @click="deleteSector(sector.id)"
+                class="icon-btn delete-btn"
+                title="Удалить"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M6 19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7H6V19ZM19 4H15.5L14.5 3H9.5L8.5 4H5V6H19V4Z" fill="#666"/>
+                </svg>
+              </button>
             </div>
           </div>
         </div>
+        
+        <!-- Кнопка Добавить сектор -->
+        <button @click="openAddModal" class="add-sector-btn">
+          <span class="btn-text">Добавить сектор</span>
+        </button>
+      </div>
 
-        <!-- Правая колонка: Диаграмма -->
-        <div class="right-section">
-          <div class="chart-card">
-            <PieChart 
-              :data="chartData"
-              title="Круговая диаграмма"
-            />
-            
-            <div class="chart-stats">
-              <div class="stat">
-                <span class="stat-label">Total Items</span>
-                <span class="stat-value">{{ chartData.length }}</span>
-              </div>
-              <div class="stat">
-                <span class="stat-label">Total Value</span>
-                <span class="stat-value">{{ totalValue }}</span>
-              </div>
-              <div class="stat">
-                <span class="stat-label">Average</span>
-                <span class="stat-value">{{ averageValue }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Предустановленные цвета -->
-          <div class="presets-card">
-            <h3 class="presets-title">Предустановленные цвета</h3>
-            <div class="color-presets">
-              <button
-                v-for="color in colorPresets"
-                :key="color"
-                class="color-preset"
-                :style="{ backgroundColor: color }"
-                @click="formData.color = color"
-                :title="color"
+      <!-- ПРАВАЯ КОЛОНКА: Диаграмма и подписи -->
+      <div class="right-column">
+        <div class="chart-wrapper">
+          <svg class="pie-chart" viewBox="0 0 500 500">
+            <!-- Классические сектора-дольки из центра -->
+            <g v-for="(sector, index) in sectorsWithAngles" :key="'slice-' + sector.id">
+              <path 
+                :d="getSectorPath(sector)" 
+                :fill="sector.color"
+                stroke="#FFFFFF"
+                stroke-width="2"
+                class="sector-path"
               />
-            </div>
+            </g>
+          </svg>
+        </div>
+        
+        <div class="sector-names">
+          <div 
+            v-for="sector in sectors" 
+            :key="'label-' + sector.id"
+            class="sector-label"
+          >
+            {{ sector.name }}
           </div>
         </div>
       </div>
-    </main>
+    </div>
+
+    <!-- Модальное окно добавления/редактирования сектора -->
+    <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
+      <div class="add-sector-modal">
+        <div class="modal-header">
+          <h2 class="modal-title">{{ modalMode === 'add' ? 'Добавление сектора' : 'Редактирование сектора' }}</h2>
+        </div>
+
+        <div class="modal-form">
+          <div class="form-field">
+            <input 
+              v-model="currentSector.name"
+              type="text"
+              class="name-input"
+              placeholder="Наименование"
+            />
+          </div>
+
+          <div class="form-field">
+            <div class="value-input-container">
+              <input 
+                v-model.number="currentSector.percentage"
+                type="number"
+                class="value-input"
+                min="1"
+                max="100"
+                placeholder="Значение"
+              />
+            </div>
+          </div>
+
+          <div class="form-field">
+            <div class="color-picker-container">
+              <div class="color-palette">
+                <div 
+                  v-for="color in colorPresets" 
+                  :key="color"
+                  class="color-option"
+                  :style="{ backgroundColor: color }"
+                  @click="currentSector.color = color"
+                  :class="{ active: currentSector.color === color }"
+                ></div>
+              </div>
+              
+              <div class="color-input-row">
+                <input 
+                  v-model="currentSector.color"
+                  type="text"
+                  class="hex-input"
+                  placeholder="Цвет"
+                />
+                <div class="color-picker-wrapper">
+                  <div 
+                    class="selected-color-preview"
+                    :style="{ backgroundColor: currentSector.color }"
+                  ></div>
+                  <input 
+                    v-model="currentSector.color"
+                    type="color"
+                    class="native-color-input"
+                    title="Выберите цвет"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button 
+            @click="handleSubmit"
+            class="modal-add-btn"
+            :disabled="!isFormValid"
+          >
+            {{ modalMode === 'add' ? 'Добавить сектор' : 'Редактировать сектор' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, computed } from 'vue';
-import PieChart from '../components/PieChart.vue';
+<script setup>
+import { ref, computed, reactive } from 'vue'
 
-interface ChartItem {
-  label: string;
-  value: number;
-  color: string;
+// Данные секторов
+const sectors = ref([
+  { id: 1, name: 'Сектор-1', percentage: 20, color: '#FF6384' },
+  { id: 2, name: 'Сектор-2', percentage: 20, color: '#36A2EB' },
+  { id: 3, name: 'Сектор-3', percentage: 20, color: '#FFCE56' },
+])
+
+// Состояние модального окна
+const showModal = ref(false)
+const modalMode = ref('add') // 'add' или 'edit'
+const editingSectorId = ref(null)
+
+// Данные текущего сектора (для формы)
+const currentSector = reactive({
+  id: null,
+  name: '',
+  percentage: '',
+  color: '#FF6384'
+})
+
+// Пресеты цветов для палитры
+const colorPresets = ref([
+  '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+  '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#9966FF',
+  '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
+  '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'
+])
+
+// Валидация формы
+const isFormValid = computed(() => {
+  return currentSector.name.trim() !== '' && 
+         currentSector.percentage >= 1 && 
+         currentSector.percentage <= 100
+})
+
+// Вычисляем углы для каждого сектора
+const sectorsWithAngles = computed(() => {
+  const total = sectors.value.reduce((sum, s) => sum + s.percentage, 0)
+  let currentAngle = 0
+  
+  return sectors.value.map(sector => {
+    const angle = (sector.percentage / total) * 360
+    const startAngle = currentAngle
+    const endAngle = currentAngle + angle
+    
+    currentAngle = endAngle
+    
+    return {
+      ...sector,
+      startAngle,
+      endAngle,
+      angle
+    }
+  })
+})
+
+// Функция для создания пути сектора
+const getSectorPath = (sector) => {
+  const centerX = 250
+  const centerY = 250
+  const radius = 200
+  
+  const startAngleRad = (sector.startAngle - 90) * Math.PI / 180
+  const endAngleRad = (sector.endAngle - 90) * Math.PI / 180
+  
+  const x1 = centerX + radius * Math.cos(startAngleRad)
+  const y1 = centerY + radius * Math.sin(startAngleRad)
+  const x2 = centerX + radius * Math.cos(endAngleRad)
+  const y2 = centerY + radius * Math.sin(endAngleRad)
+  
+  const largeArcFlag = sector.angle > 180 ? 1 : 0
+  
+  return [
+    `M ${centerX} ${centerY}`,
+    `L ${x1} ${y1}`,
+    `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+    'Z'
+  ].join(' ')
 }
 
-// Реактивные данные
-const chartData = ref<ChartItem[]>([
-  { label: 'Маркетинг', value: 30, color: '#3b82f6' },
-  { label: 'Продажи', value: 25, color: '#10b981' },
-  { label: 'Разработка', value: 20, color: '#f59e0b' },
-  { label: 'Поддержка', value: 15, color: '#ef4444' },
-  { label: 'Другое', value: 10, color: '#8b5cf6' },
-]);
+// Открытие модального окна для добавления
+const openAddModal = () => {
+  modalMode.value = 'add'
+  resetCurrentSector()
+  showModal.value = true
+}
 
-const formData = ref<ChartItem>({
-  label: '',
-  value: 10,
-  color: '#3b82f6',
-});
+// Открытие модального окна для редактирования
+const openEditModal = (sector) => {
+  modalMode.value = 'edit'
+  editingSectorId.value = sector.id
+  
+  // Заполняем форму данными редактируемого сектора
+  currentSector.id = sector.id
+  currentSector.name = sector.name
+  currentSector.percentage = sector.percentage
+  currentSector.color = sector.color
+  
+  showModal.value = true
+}
 
-const editingIndex = ref<number | null>(null);
-
-// Предустановленные цвета
-const colorPresets = ref([
-  '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
-  '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
-]);
-
-// Вычисляемые свойства
-const totalValue = computed(() => {
-  return chartData.value.reduce((sum, item) => sum + item.value, 0);
-});
-
-const averageValue = computed(() => {
-  return chartData.value.length 
-    ? Math.round(totalValue.value / chartData.value.length) 
-    : 0;
-});
-
-// Методы
+// Обработка отправки формы (добавление или редактирование)
 const handleSubmit = () => {
-  if (editingIndex.value !== null) {
-    chartData.value[editingIndex.value] = { ...formData.value };
-    editingIndex.value = null;
+  if (!isFormValid.value) return
+  
+  if (modalMode.value === 'add') {
+    addNewSector()
   } else {
-    chartData.value.push({ ...formData.value });
+    updateSector()
   }
   
-  resetForm();
-};
+  closeModal()
+}
 
-const editItem = (index: number) => {
-  const item = chartData.value[index];
+// Добавление нового сектора
+const addNewSector = () => {
+  const nextId = sectors.value.length > 0 
+    ? Math.max(...sectors.value.map(s => s.id)) + 1 
+    : 1
   
-  formData.value = {
-    label: item?.label ?? '',
-    value: item?.value ?? 0,
-    color: item?.color ?? '#3b82f6',
-  };
-  editingIndex.value = index;
-};
+  sectors.value.push({
+    id: nextId,
+    name: currentSector.name || `Сектор-${nextId}`,
+    percentage: Number(currentSector.percentage),
+    color: currentSector.color
+  })
+}
 
-const removeItem = (index: number) => {
-  // Проверяем индекс
-  if (index < 0 || index >= chartData.value.length) return;
+// Обновление существующего сектора
+const updateSector = () => {
+  const index = sectors.value.findIndex(sector => sector.id === editingSectorId.value)
   
-  if (editingIndex.value === index) {
-    editingIndex.value = null;
-    resetForm();
+  if (index !== -1) {
+    sectors.value[index] = {
+      id: editingSectorId.value,
+      name: currentSector.name,
+      percentage: Number(currentSector.percentage),
+      color: currentSector.color
+    }
   }
-  
-  chartData.value.splice(index, 1);
-};
+}
 
-const cancelEdit = () => {
-  editingIndex.value = null;
-  resetForm();
-};
+// Закрытие модального окна
+const closeModal = () => {
+  showModal.value = false
+  editingSectorId.value = null
+  resetCurrentSector()
+}
 
-const resetForm = () => {
-  formData.value = {
-    label: '',
-    value: 10,
-    color: '#3b82f6',
-  };
-};
+// Сброс данных текущего сектора
+const resetCurrentSector = () => {
+  currentSector.id = null
+  currentSector.name = ''
+  currentSector.percentage = ''
+  currentSector.color = '#FF6384'
+}
+
+// Удаление сектора
+const deleteSector = (id) => {
+  sectors.value = sectors.value.filter(sector => sector.id !== id)
+}
 </script>
 
 <style scoped>
-.pie-chart-page {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 2rem;
+/* Основные стили */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
 }
 
+.pie-chart-container {
+  width: 100%;
+  max-width: 1170px;
+  margin: 0 auto;
+  padding: 30px 20px 0;
+  position: relative;
+}
+
+/* ВЕРХНИЙ БЛОК ЗАГОЛОВКА */
 .header {
-  text-align: center;
-  color: white;
-  margin-bottom: 3rem;
+  width: 100%;
+  height: auto;
+  min-height: 69px;
+  padding: 0 10px 30px;
+  border-bottom: 1px solid #E5E7EB;
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 40px;
 }
 
 .title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  line-height: 100%;
+  letter-spacing: 0%;
+  margin: 0;
 }
 
-.subtitle {
-  font-size: 1.1rem;
-  opacity: 0.9;
+/* ОБЩАЯ ОБЕРТКА ДЛЯ ДВУХ КОЛОНОК */
+.content-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px;
+  width: 100%;
+  position: relative;
 }
 
-.main-content {
-  max-width: 1400px;
-  margin: 0 auto;
+/* ЛЕВАЯ КОЛОНКА */
+.left-column {
+  flex: 1;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.dashboard {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr;
-  gap: 2rem;
+/* СПИСОК СЕКТОРОВ */
+.sectors-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-@media (max-width: 1024px) {
-  .dashboard {
-    grid-template-columns: 1fr;
+/* СТРОКА СЕКТОРА */
+.sector-row {
+  width: 100%;
+  min-height: 60px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  flex-wrap: wrap;
+}
+
+/* ЛЕВАЯ ЧАСТЬ СТРОКИ С РАЗДЕЛИТЕЛЯМИ */
+.sector-left {
+  flex: 1;
+  min-width: 200px;
+  height: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+@media (min-width: 768px) {
+  .sector-left {
+    margin-bottom: 0;
+    flex-wrap: nowrap;
   }
 }
 
-.left-section {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+.sector-name {
+  font-weight: 500;
+  font-size: clamp(0.875rem, 2vw, 1rem);
+  color: #111827;
+  white-space: nowrap;
 }
 
-.right-section {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+.sector-percentage {
+  font-weight: 500;
+  font-size: clamp(0.875rem, 2vw, 1rem);
+  color: #6B7280;
+  white-space: nowrap;
 }
 
-/* Карточки */
-.form-card,
-.list-card,
-.chart-card,
-.presets-card {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+.color-circle {
+  width: 16px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid #D1D5DB;
 }
 
-/* Форма */
-.form-title {
-  color: #2d3748;
-  margin-top: 0;
-  margin-bottom: 1.5rem;
-  font-size: 1.5rem;
+/* ВЕРТИКАЛЬНЫЙ РАЗДЕЛИТЕЛЬ */
+.vertical-divider {
+  width: 0;
+  min-width: 2px;
+  height: 16px;
+  border-radius: 2px;
+  border: 2px solid #DBDFE9;
+  opacity: 1;
 }
 
-.data-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.form-label {
-  font-weight: 600;
-  color: #4a5568;
-  font-size: 0.9rem;
-}
-
-.form-input {
-  padding: 0.75rem 1rem;
-  border: 1px solid #cbd5e0;
-  border-radius: 6px;
-  font-size: 1rem;
-  transition: border-color 0.2s;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: #4299e1;
-  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
-}
-
-.color-picker-wrapper {
+/* ПРАВАЯ ЧАСТЬ СТРОКИ */
+.sector-right {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 15px;
+  flex-shrink: 0;
 }
 
-.color-preview {
-  width: 40px;
-  height: 40px;
-  border-radius: 6px;
-  border: 2px solid white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.color-input-native {
-  width: 40px;
-  height: 40px;
+.icon-btn {
+  background: none;
   border: none;
-  border-radius: 6px;
   cursor: pointer;
   padding: 0;
-}
-
-.color-input-native::-webkit-color-swatch-wrapper {
-  padding: 0;
-}
-
-.color-input-native::-webkit-color-swatch {
-  border: none;
-  border-radius: 4px;
-}
-
-.color-input {
-  flex: 1;
-}
-
-.form-actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.btn {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.9rem;
-}
-
-.btn-primary {
-  background: #4299e1;
-  color: white;
-}
-
-.btn-primary:hover {
-  background: #3182ce;
-}
-
-.btn-secondary {
-  background: #e2e8f0;
-  color: #4a5568;
-}
-
-.btn-secondary:hover {
-  background: #cbd5e0;
-}
-
-/* Список */
-.list-title {
-  color: #2d3748;
-  margin-top: 0;
-  margin-bottom: 1.5rem;
-  font-size: 1.2rem;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: #718096;
-}
-
-.items-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.list-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  transition: all 0.2s;
-}
-
-.list-item.is-editing {
-  background: #ebf8ff;
-  border-color: #4299e1;
-}
-
-.item-info {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.item-color {
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  border: 1px solid #cbd5e0;
-}
-
-.item-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.item-label {
-  font-weight: 600;
-  color: #2d3748;
-}
-
-.item-value {
-  color: #4a5568;
-  font-size: 0.9rem;
-}
-
-.item-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.btn-icon {
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 4px;
-  background: white;
-  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
-  transition: all 0.2s;
 }
 
-.btn-edit:hover {
-  background: #e6fffa;
-  color: #0d9488;
+.icon-btn:hover {
+  opacity: 0.7;
 }
 
-.btn-delete:hover {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
-/* Диаграмма */
-.chart-card {
-  height: 500px;
-}
-
-.chart-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid #e2e8f0;
-}
-
-.stat {
-  text-align: center;
-  padding: 1rem;
-  background: #f8fafc;
-  border-radius: 8px;
-}
-
-.stat-label {
-  display: block;
-  font-size: 0.85rem;
-  color: #718096;
-  margin-bottom: 0.5rem;
-}
-
-.stat-value {
-  display: block;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #2d3748;
-}
-
-/* Пресеты цветов */
-.presets-title {
-  color: #2d3748;
-  margin-top: 0;
-  margin-bottom: 1rem;
-  font-size: 1.2rem;
-}
-
-.color-presets {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 0.75rem;
-}
-
-.color-preset {
-  width: 40px;
-  height: 40px;
+/* КНОПКА ДОБАВИТЬ СЕКТОР */
+.add-sector-btn {
+  width: 100%;
+  min-height: 60px;
+  padding: 15px 20px;
+  background: #1B84FF;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
+  opacity: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: all 0.2s;
-  border: 2px solid white;
+  transition: background 0.2s ease, transform 0.1s ease;
+  margin-top: 10px;
 }
 
-.color-preset:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+.btn-text {
+  color: white;
+  font-weight: 500;
+  font-size: clamp(0.875rem, 2vw, 1rem);
+  line-height: 1.5;
+  letter-spacing: 0.2px;
+  text-align: center;
+}
+
+.add-sector-btn:hover {
+  background: #0A74EB;
+}
+
+.add-sector-btn:active {
+  background: #0964D1;
+  transform: translateY(1px);
+}
+
+/* ПРАВАЯ КОЛОНКА - ДИАГРАММА */
+.right-column {
+  flex: 1;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* КОНТЕЙНЕР ДИАГРАММЫ */
+.chart-wrapper {
+  width: 100%;
+  max-width: 500px;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.pie-chart {
+  width: 100%;
+  height: 100%;
+}
+
+.sector-path {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.sector-path:hover {
+  filter: brightness(0.9);
+  transform-origin: center;
+  transform: scale(1.02);
+}
+
+/* ПОДПИСИ ПОД ДИАГРАММОЙ */
+.sector-names {
+  width: 100%;
+  max-width: 540px;
+  height: auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin-top: 30px;
+  padding: 10px;
+}
+
+.sector-label {
+  font-weight: 500;
+  font-size: clamp(0.75rem, 1.5vw, 1rem);
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.sector-label::before {
+  content: '';
+  width: 10px;
+  min-width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* МОДАЛЬНОЕ ОКНО */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.add-sector-modal {
+  width: 100%;
+  max-width: 390px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: white;
+  border-radius: 15px;
+  opacity: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+/* ЗАГОЛОВОК МОДАЛЬНОГО ОКНА */
+.modal-header {
+  border-radius: 15px 15px 0 0;
+  padding: 16px 20px;
+  margin: -20px -20px 10px -20px;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 1;
+}
+
+.modal-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: clamp(1rem, 3vw, 1.25rem);
+  line-height: 100%;
+  letter-spacing: 0%;
+  color: #252F4A;
+  margin: 0;
+}
+
+/* ФОРМА В МОДАЛЬНОМ ОКНЕ */
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  flex: 1;
+}
+
+/* ПЛЕЙСХОЛДЕРЫ */
+.name-input::placeholder,
+.value-input::placeholder,
+.hex-input::placeholder {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: clamp(0.75rem, 2vw, 0.875rem);
+  line-height: 1.33;
+  letter-spacing: 0%;
+  color: #99A1B7;
+}
+
+/* ПОЛЕ "НАИМЕНОВАНИЕ" */
+.name-input {
+  width: 100%;
+  min-height: 60px;
+  border-radius: 10px;
+  border: 1px solid #D1D5DB;
+  padding: 10px 20px;
+  font-size: clamp(0.875rem, 2vw, 1rem);
+  color: #111827;
+  transition: border-color 0.2s;
+}
+
+.name-input:focus {
+  outline: none;
+  border-color: #1B84FF;
+}
+
+/* ПОЛЕ "ЗНАЧЕНИЕ" */
+.value-input-container {
+  width: 100%;
+  min-height: 60px;
+}
+
+.value-input {
+  width: 100%;
+  height: 100%;
+  min-height: 60px;
+  border-radius: 10px;
+  border: 1px solid #D1D5DB;
+  padding: 10px 20px;
+  font-size: clamp(0.875rem, 2vw, 1rem);
+  color: #111827;
+  transition: border-color 0.2s;
+}
+
+.value-input:focus {
+  outline: none;
+  border-color: #1B84FF;
+}
+
+/* ПОЛЕ "ЦВЕТ" */
+.color-picker-container {
+  width: 100%;
+  height: auto;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.color-palette {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.color-option {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  border: 2px solid white;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.color-option:hover {
+  transform: scale(1.05);
+}
+
+.color-option.active {
+  border-color: #1B84FF;
+  box-shadow: 0 0 0 2px rgba(27, 132, 255, 0.3);
+}
+
+.color-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.hex-input {
+  flex: 1;
+  min-width: 150px;
+  height: 40px;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  padding: 0 12px;
+  font-size: clamp(0.75rem, 2vw, 0.875rem);
+  color: #111827;
+}
+
+.hex-input:focus {
+  outline: none;
+  border-color: #1B84FF;
+}
+
+.color-picker-wrapper {
+  position: relative;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+}
+
+.selected-color-preview {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  border: 1px solid #D1D5DB;
+  pointer-events: none;
+}
+
+.native-color-input {
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.native-color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.native-color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 4px;
+}
+
+/* КНОПКА В МОДАЛЬНОМ ОКНЕ */
+.modal-add-btn {
+  width: 100%;
+  min-height: 60px;
+  border-radius: 10px;
+  background: #1B84FF;
+  border: none;
+  color: white;
+  font-weight: 500;
+  font-size: clamp(0.875rem, 2vw, 1rem);
+  cursor: pointer;
+  transition: background 0.2s;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: auto;
+}
+
+.modal-add-btn:hover:not(:disabled) {
+  background: #0A74EB;
+}
+
+.modal-add-btn:active:not(:disabled) {
+  background: #0964D1;
+}
+
+.modal-add-btn:disabled {
+  background: #9CA3AF;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* ЦВЕТНЫЕ ТОЧКИ ПЕРЕД НАЗВАНИЯМИ СЕКТОРОВ */
+.sector-label:nth-child(1)::before { background-color: #FF6384; }
+.sector-label:nth-child(2)::before { background-color: #36A2EB; }
+.sector-label:nth-child(3)::before { background-color: #FFCE56; }
+.sector-label:nth-child(4)::before { background-color: #4BC0C0; }
+.sector-label:nth-child(5)::before { background-color: #9966FF; }
+
+/* МЕДИА-ЗАПРОСЫ ДЛЯ РАЗНЫХ РАЗРЕШЕНИЙ */
+@media (max-width: 1024px) {
+  .content-wrapper {
+    gap: 30px;
+  }
+  
+  .left-column,
+  .right-column {
+    min-width: 100%;
+  }
+  
+  .sector-left {
+    gap: 8px;
+  }
 }
 
 @media (max-width: 768px) {
-  .pie-chart-page {
-    padding: 1rem;
+  .pie-chart-container {
+    padding: 20px 15px 0;
+  }
+  
+  .header {
+    padding: 0 0 20px;
+    margin-bottom: 30px;
+  }
+  
+  .content-wrapper {
+    gap: 20px;
+  }
+  
+  .sector-row {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 15px;
+  }
+  
+  .sector-left {
+    justify-content: space-between;
+    margin-bottom: 15px;
+    gap: 5px 10px;
+  }
+  
+  .sector-right {
+    justify-content: center;
+    margin-top: 10px;
+  }
+  
+  .vertical-divider {
+    display: none;
+  }
+  
+  .modal-overlay {
+    padding: 10px;
+  }
+  
+  .add-sector-modal {
+    max-height: 85vh;
+  }
+}
+
+@media (max-width: 480px) {
+  .pie-chart-container {
+    padding: 15px 10px 0;
+  }
+  
+  .header {
+    margin-bottom: 20px;
   }
   
   .title {
-    font-size: 1.8rem;
+    font-size: 1.25rem;
   }
   
-  .form-card,
-  .list-card,
-  .chart-card,
-  .presets-card {
-    padding: 1.5rem;
+  .sector-names {
+    gap: 10px;
+    margin-top: 20px;
   }
   
-  .chart-stats {
-    grid-template-columns: 1fr;
-  }
-  
-  .color-presets {
+  .color-palette {
     grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .color-input-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  
+  .hex-input {
+    min-width: 100%;
   }
 }
 </style>
