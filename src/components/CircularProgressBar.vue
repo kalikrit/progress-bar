@@ -252,15 +252,7 @@ const currentColor = computed(() => {
   }
   
   const color = `rgb(${r}, ${g}, 0)`;
-  console.log('Current color calculation:', {
-    progress,
-    r,
-    g,
-    color,
-    type: props.type,
-    status: props.status
-  });
-  
+    
   return color;
 });
 
@@ -268,16 +260,8 @@ const progressBg = computed(() => props.backgroundColor);
 
 // Функция для принудительного обновления цвета SVG элемента
 const updateCircleColor = () => {
-  console.log('updateCircleColor called, ref:', progressCircleRef.value);
-  
   if (progressCircleRef.value) {
-    console.log('Setting color to:', currentColor.value);
     progressCircleRef.value.style.stroke = currentColor.value;
-    
-    // Проверяем, установился ли цвет
-    setTimeout(() => {
-      console.log('Current stroke after update:', progressCircleRef.value?.style.stroke);
-    }, 50);
   }
 };
 
@@ -336,13 +320,7 @@ watch(() => props.status, (newStatus, oldStatus) => {
 
 // Следим за изменением цвета и обновляем SVG
 watch(currentColor, (newColor, oldColor) => {
-  console.log('Color changed!', { 
-    oldColor, 
-    newColor,
-    currentValue: currentColor.value 
-  });
   nextTick(() => {
-    console.log('Calling updateCircleColor from watcher');
     updateCircleColor();
   });
 }, { immediate: true });
@@ -352,8 +330,7 @@ onMounted(() => {
   currentAnimatedValue.value = normalizedProgress.value;
   currentDisplayValue.value = Math.round(normalizedProgress.value);
   nextTick(updateCircleColor);
-    console.log('progressCircleRef value:', progressCircleRef.value);
-  console.log('Component mounted, forcing color update');
+
   setTimeout(updateCircleColor, 100);
 });
 
