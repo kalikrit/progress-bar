@@ -75,7 +75,7 @@
 
 ```bash
 # Клонируйте репозиторий
-git clone https://github.com/ваш-репозиторий/progress-bar.git
+git clone https://github.com/kalikrit/progress-bar.git
 
 # Установите зависимости
 cd progress-bar
