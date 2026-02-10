@@ -28,15 +28,25 @@
             </div>
           </div>
 
-          <div class="example-card">
+        <div class="example-card">
             <h3>Dashboard Type</h3>
             <CircularProgressBar 
-              :model-value="75"
-              type="dashboard"
-              :size="100"
+                :model-value="dashboardProgress"
+                type="dashboard"
+                :size="100"
             />
+            <div class="controls">
+                <input 
+                type="range" 
+                v-model.number="dashboardProgress" 
+                min="0" 
+                max="100" 
+                class="slider"
+                />
+                <span class="value-label">{{ dashboardProgress }}%</span>
+            </div>
             <p class="description">270° arc with rounded ends</p>
-          </div>
+        </div>
         </div>
       </section>
 
@@ -229,6 +239,7 @@ import CircularProgressBar from '../components/CircularProgressBar.vue';
 
 // Basic example
 const basicProgress = ref(35);
+const dashboardProgress = ref(75);
 
 // Status examples - теперь для warning и error показываем иконки вместо текста
 const statusExamples = ref([

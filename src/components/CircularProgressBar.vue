@@ -8,7 +8,6 @@
     :aria-valuemax="max"
     :aria-label="ariaLabel || `Progress: ${currentDisplayValue}%`"
     :style="{
-      '--progress-color': currentColor,
       '--progress-bg': progressBg,
       '--size': `${size}px`,
     }"
@@ -252,15 +251,33 @@ const currentColor = computed(() => {
     g = 255;
   }
   
-  return `rgb(${r}, ${g}, 0)`;
+  const color = `rgb(${r}, ${g}, 0)`;
+  console.log('Current color calculation:', {
+    progress,
+    r,
+    g,
+    color,
+    type: props.type,
+    status: props.status
+  });
+  
+  return color;
 });
 
 const progressBg = computed(() => props.backgroundColor);
 
 // Функция для принудительного обновления цвета SVG элемента
 const updateCircleColor = () => {
+  console.log('updateCircleColor called, ref:', progressCircleRef.value);
+  
   if (progressCircleRef.value) {
+    console.log('Setting color to:', currentColor.value);
     progressCircleRef.value.style.stroke = currentColor.value;
+    
+    // Проверяем, установился ли цвет
+    setTimeout(() => {
+      console.log('Current stroke after update:', progressCircleRef.value?.style.stroke);
+    }, 50);
   }
 };
 
@@ -318,15 +335,26 @@ watch(() => props.status, (newStatus, oldStatus) => {
 });
 
 // Следим за изменением цвета и обновляем SVG
-watch(currentColor, () => {
-  nextTick(updateCircleColor);
-});
+watch(currentColor, (newColor, oldColor) => {
+  console.log('Color changed!', { 
+    oldColor, 
+    newColor,
+    currentValue: currentColor.value 
+  });
+  nextTick(() => {
+    console.log('Calling updateCircleColor from watcher');
+    updateCircleColor();
+  });
+}, { immediate: true });
 
 // Lifecycle
 onMounted(() => {
   currentAnimatedValue.value = normalizedProgress.value;
   currentDisplayValue.value = Math.round(normalizedProgress.value);
   nextTick(updateCircleColor);
+    console.log('progressCircleRef value:', progressCircleRef.value);
+  console.log('Component mounted, forcing color update');
+  setTimeout(updateCircleColor, 100);
 });
 
 onUnmounted(() => {
@@ -363,12 +391,11 @@ defineExpose({
   transition: stroke 0.5s ease;
 }
 
-.progress-circle {
-  stroke: var(--progress-color, #3b82f6);
+.circular-progress-bar.status--inProgress .progress-circle {
+  stroke: currentColor; 
   transition: 
     stroke-dashoffset var(--animation-duration, 0.8s) cubic-bezier(0.4, 0, 0.2, 1),
-    stroke 0.5s ease !important; /* !important чтобы переопределить inline styles */
-  transform-origin: center;
+    stroke 0.5s ease;
 }
 
 .progress-text {
@@ -427,6 +454,6 @@ defineExpose({
 .circular-progress-bar.status--inProgress .progress-circle {
   transition: 
     stroke-dashoffset var(--animation-duration, 0.8s) cubic-bezier(0.4, 0, 0.2, 1),
-    stroke 0.5s ease !important;
+    stroke 0.5s ease;
 }
 </style>
