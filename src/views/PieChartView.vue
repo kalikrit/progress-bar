@@ -11,7 +11,7 @@
       <div class="left-column">
         <div class="sectors-list">
           <div 
-            v-for="(sector, index) in sectors" 
+            v-for="sector in store.sectors" 
             :key="sector.id" 
             class="sector-row"
           >
@@ -68,9 +68,9 @@
         <div class="chart-wrapper">
           <svg class="pie-chart" viewBox="0 0 500 500">
             <!-- Классические сектора-дольки из центра -->
-            <g v-for="(sector, index) in sectorsWithAngles" :key="'slice-' + sector.id">
+            <g v-for="sector in store.sectorsWithAngles" :key="'slice-' + sector.id">
               <path 
-                :d="getSectorPath(sector)" 
+                :d="store.getSectorPath(sector)" 
                 :fill="sector.color"
                 stroke="#FFFFFF"
                 stroke-width="2"
@@ -82,7 +82,7 @@
         
         <div class="sector-names">
           <div 
-            v-for="sector in sectors" 
+            v-for="sector in store.sectors" 
             :key="'label-' + sector.id"
             class="sector-label"
           >
@@ -171,23 +171,23 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, reactive } from 'vue'
+import { usePieChartStore } from '../stores/pieChartStore'
+import type { Sector, SectorFormData } from '@/types/pieChart'
 
-// Данные секторов
-const sectors = ref([
-  { id: 1, name: 'Сектор-1', percentage: 20, color: '#FF6384' },
-  { id: 2, name: 'Сектор-2', percentage: 20, color: '#36A2EB' },
-  { id: 3, name: 'Сектор-3', percentage: 20, color: '#FFCE56' },
-])
+type ModalMode = 'add' | 'edit'
+
+// Используем Pinia store
+const store = usePieChartStore()
 
 // Состояние модального окна
-const showModal = ref(false)
-const modalMode = ref('add') // 'add' или 'edit'
-const editingSectorId = ref(null)
+const showModal = ref<boolean>(false)
+const modalMode = ref<ModalMode>('add')
+const editingSectorId = ref<number | null>(null)
 
 // Данные текущего сектора (для формы)
-const currentSector = reactive({
+const currentSector = reactive<SectorFormData>({
   id: null,
   name: '',
   percentage: '',
@@ -195,7 +195,7 @@ const currentSector = reactive({
 })
 
 // Пресеты цветов для палитры
-const colorPresets = ref([
+const colorPresets = ref<string[]>([
   '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
   '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#9966FF',
   '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
@@ -205,64 +205,19 @@ const colorPresets = ref([
 // Валидация формы
 const isFormValid = computed(() => {
   return currentSector.name.trim() !== '' && 
-         currentSector.percentage >= 1 && 
-         currentSector.percentage <= 100
+         Number(currentSector.percentage) >= 1 && 
+         Number(currentSector.percentage) <= 100
 })
-
-// Вычисляем углы для каждого сектора
-const sectorsWithAngles = computed(() => {
-  const total = sectors.value.reduce((sum, s) => sum + s.percentage, 0)
-  let currentAngle = 0
-  
-  return sectors.value.map(sector => {
-    const angle = (sector.percentage / total) * 360
-    const startAngle = currentAngle
-    const endAngle = currentAngle + angle
-    
-    currentAngle = endAngle
-    
-    return {
-      ...sector,
-      startAngle,
-      endAngle,
-      angle
-    }
-  })
-})
-
-// Функция для создания пути сектора
-const getSectorPath = (sector) => {
-  const centerX = 250
-  const centerY = 250
-  const radius = 200
-  
-  const startAngleRad = (sector.startAngle - 90) * Math.PI / 180
-  const endAngleRad = (sector.endAngle - 90) * Math.PI / 180
-  
-  const x1 = centerX + radius * Math.cos(startAngleRad)
-  const y1 = centerY + radius * Math.sin(startAngleRad)
-  const x2 = centerX + radius * Math.cos(endAngleRad)
-  const y2 = centerY + radius * Math.sin(endAngleRad)
-  
-  const largeArcFlag = sector.angle > 180 ? 1 : 0
-  
-  return [
-    `M ${centerX} ${centerY}`,
-    `L ${x1} ${y1}`,
-    `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
-    'Z'
-  ].join(' ')
-}
 
 // Открытие модального окна для добавления
-const openAddModal = () => {
+const openAddModal = (): void => {
   modalMode.value = 'add'
   resetCurrentSector()
   showModal.value = true
 }
 
 // Открытие модального окна для редактирования
-const openEditModal = (sector) => {
+const openEditModal = (sector: Sector): void => {
   modalMode.value = 'edit'
   editingSectorId.value = sector.id
   
@@ -276,64 +231,48 @@ const openEditModal = (sector) => {
 }
 
 // Обработка отправки формы (добавление или редактирование)
-const handleSubmit = () => {
+const handleSubmit = (): void => {
   if (!isFormValid.value) return
   
+  const percentage = Number(currentSector.percentage)
+  
   if (modalMode.value === 'add') {
-    addNewSector()
-  } else {
-    updateSector()
+    // Используем action из store
+    store.addSector({
+      name: currentSector.name,
+      percentage,
+      color: currentSector.color
+    })
+  } else if (editingSectorId.value !== null) {
+    // Используем action из store
+    store.updateSector(editingSectorId.value, {
+      name: currentSector.name,
+      percentage,
+      color: currentSector.color
+    })
   }
   
   closeModal()
 }
 
-// Добавление нового сектора
-const addNewSector = () => {
-  const nextId = sectors.value.length > 0 
-    ? Math.max(...sectors.value.map(s => s.id)) + 1 
-    : 1
-  
-  sectors.value.push({
-    id: nextId,
-    name: currentSector.name || `Сектор-${nextId}`,
-    percentage: Number(currentSector.percentage),
-    color: currentSector.color
-  })
-}
-
-// Обновление существующего сектора
-const updateSector = () => {
-  const index = sectors.value.findIndex(sector => sector.id === editingSectorId.value)
-  
-  if (index !== -1) {
-    sectors.value[index] = {
-      id: editingSectorId.value,
-      name: currentSector.name,
-      percentage: Number(currentSector.percentage),
-      color: currentSector.color
-    }
-  }
-}
-
 // Закрытие модального окна
-const closeModal = () => {
+const closeModal = (): void => {
   showModal.value = false
   editingSectorId.value = null
   resetCurrentSector()
 }
 
 // Сброс данных текущего сектора
-const resetCurrentSector = () => {
+const resetCurrentSector = (): void => {
   currentSector.id = null
   currentSector.name = ''
   currentSector.percentage = ''
   currentSector.color = '#FF6384'
 }
 
-// Удаление сектора
-const deleteSector = (id) => {
-  sectors.value = sectors.value.filter(sector => sector.id !== id)
+// Удаление сектора (используем action из store)
+const deleteSector = (id: number): void => {
+  store.deleteSector(id)
 }
 </script>
 
