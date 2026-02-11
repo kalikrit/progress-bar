@@ -2,11 +2,6 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Sector, SectorWithAngles } from '@/types/pieChart'
 
-// Утилитарный тип для фильтрации undefined
-type DefinedProperties<T> = {
-  [K in keyof T]: T[K] extends undefined ? never : T[K]
-}
-
 export const usePieChartStore = defineStore('pieChart', () => {
   // Состояние с типизацией
   const sectors = ref<Sector[]>([
@@ -18,6 +13,10 @@ export const usePieChartStore = defineStore('pieChart', () => {
   // Геттеры (вычисляемые свойства) с типами
   const totalPercentage = computed(() => {
     return sectors.value.reduce((sum, sector) => sum + sector.percentage, 0)
+  })
+  
+  const remainingPercentage = computed(() => {
+    return 100 - totalPercentage.value
   })
   
   const sectorsWithAngles = computed<SectorWithAngles[]>(() => {
@@ -41,7 +40,18 @@ export const usePieChartStore = defineStore('pieChart', () => {
   })
   
   // Действия (методы) с типами
-  const addSector = (sectorData: Omit<Sector, 'id'>) => {
+  const addSector = (sectorData: Omit<Sector, 'id'>): { success: boolean; message?: string } => {
+    const newPercentage = Number(sectorData.percentage)
+    const currentTotal = totalPercentage.value
+    
+    // Проверка суммы процентов
+    if (currentTotal + newPercentage > 100) {
+      return {
+        success: false,
+        message: `Сумма процентов не может превышать 100%. Доступно: ${100 - currentTotal}%`
+      }
+    }
+    
     const nextId = sectors.value.length > 0 
       ? Math.max(...sectors.value.map(s => s.id)) + 1 
       : 1
@@ -49,28 +59,48 @@ export const usePieChartStore = defineStore('pieChart', () => {
     sectors.value.push({
       id: nextId,
       name: sectorData.name || `Сектор-${nextId}`,
-      percentage: Number(sectorData.percentage),
+      percentage: newPercentage,
       color: sectorData.color || '#FF6384'
     })
+    
+    return { success: true }
   }
   
-  const updateSector = (id: number, updates: Partial<Omit<Sector, 'id'>>) => {
-    const index = sectors.value.findIndex(sector => sector.id === id)
+  const updateSector = (id: number, updates: Partial<Omit<Sector, 'id'>>): { success: boolean; message?: string } => {
+    const sectorToUpdate = sectors.value.find(sector => sector.id === id)
     
-    if (index !== -1) {
-      // Используем утверждение типа, что сектор существует
-      const currentSector = sectors.value[index]!
-      
-      // Явное создание нового объекта сектора
-      const updatedSector: Sector = {
-        id: currentSector.id,
-        name: updates.name !== undefined ? updates.name : currentSector.name,
-        percentage: updates.percentage !== undefined ? Number(updates.percentage) : currentSector.percentage,
-        color: updates.color !== undefined ? updates.color : currentSector.color
-      }
-      
-      sectors.value[index] = updatedSector
+    if (!sectorToUpdate) {
+      return { success: false, message: 'Сектор не найден' }
     }
+    
+    const currentTotal = totalPercentage.value
+    const currentSectorPercentage = sectorToUpdate.percentage
+    const newPercentage = updates.percentage !== undefined 
+      ? Number(updates.percentage) 
+      : currentSectorPercentage
+    
+    // Проверка суммы процентов при обновлении
+    const newTotal = currentTotal - currentSectorPercentage + newPercentage
+    
+    if (newTotal > 100) {
+      const maxAllowed = 100 - (currentTotal - currentSectorPercentage)
+      return {
+        success: false,
+        message: `Сумма процентов не может превышать 100%. Максимум для этого сектора: ${maxAllowed}%`
+      }
+    }
+    
+    const index = sectors.value.indexOf(sectorToUpdate)
+    
+    const updatedSector: Sector = {
+      id: sectorToUpdate.id,
+      name: updates.name !== undefined ? updates.name : sectorToUpdate.name,
+      percentage: newPercentage,
+      color: updates.color !== undefined ? updates.color : sectorToUpdate.color
+    }
+    
+    sectors.value[index] = updatedSector
+    return { success: true }
   }
   
   const deleteSector = (id: number) => {
@@ -79,6 +109,30 @@ export const usePieChartStore = defineStore('pieChart', () => {
   
   const getSectorById = (id: number): Sector | undefined => {
     return sectors.value.find(sector => sector.id === id)
+  }
+  
+  // Вспомогательные методы для валидации
+  const canAddSector = (percentage: number): boolean => {
+    return totalPercentage.value + percentage <= 100
+  }
+  
+  const canUpdateSector = (sectorId: number, newPercentage: number): boolean => {
+    const sector = sectors.value.find(s => s.id === sectorId)
+    if (!sector) return false
+    
+    const newTotal = totalPercentage.value - sector.percentage + newPercentage
+    return newTotal <= 100
+  }
+  
+  const getMaxPercentageForNewSector = (): number => {
+    return 100 - totalPercentage.value
+  }
+  
+  const getMaxPercentageForSector = (sectorId: number): number => {
+    const sector = sectors.value.find(s => s.id === sectorId)
+    if (!sector) return 0
+    
+    return 100 - (totalPercentage.value - sector.percentage)
   }
   
   // Вспомогательная функция для диаграммы
@@ -111,6 +165,7 @@ export const usePieChartStore = defineStore('pieChart', () => {
     
     // Геттеры
     totalPercentage,
+    remainingPercentage,
     sectorsWithAngles,
     
     // Действия
@@ -118,6 +173,14 @@ export const usePieChartStore = defineStore('pieChart', () => {
     updateSector,
     deleteSector,
     getSectorById,
+    
+    // Валидация
+    canAddSector,
+    canUpdateSector,
+    getMaxPercentageForNewSector,
+    getMaxPercentageForSector,
+    
+    // Утилиты
     getSectorPath
   }
 })

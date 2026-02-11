@@ -115,8 +115,8 @@
                 v-model.number="currentSector.percentage"
                 type="number"
                 class="value-input"
-                min="1"
-                max="100"
+                :min="1"
+                :max="getMaxPercentage()"
                 placeholder="Значение"
               />
             </div>
@@ -202,11 +202,40 @@ const colorPresets = ref<string[]>([
   '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'
 ])
 
+// Вычисляем максимальный доступный процент
+const getMaxPercentage = (): number => {
+  const total = store.sectors.reduce((sum, s) => sum + s.percentage, 0)
+  
+  if (modalMode.value === 'add') {
+    return 100 - total
+  } else if (editingSectorId.value !== null) {
+    const sector = store.sectors.find(s => s.id === editingSectorId.value)
+    if (sector) {
+      return 100 - (total - sector.percentage)
+    }
+  }
+  return 100
+}
+
 // Валидация формы
 const isFormValid = computed(() => {
+  const percentage = Number(currentSector.percentage)
+  const total = store.sectors.reduce((sum, s) => sum + s.percentage, 0)
+  
+  // Проверка суммы процентов
+  if (modalMode.value === 'add') {
+    if (total + percentage > 100) return false
+  } else if (editingSectorId.value !== null) {
+    const sector = store.sectors.find(s => s.id === editingSectorId.value)
+    if (sector) {
+      const newTotal = total - sector.percentage + percentage
+      if (newTotal > 100) return false
+    }
+  }
+  
   return currentSector.name.trim() !== '' && 
-         Number(currentSector.percentage) >= 1 && 
-         Number(currentSector.percentage) <= 100
+         percentage >= 1 && 
+         percentage <= 100
 })
 
 // Открытие модального окна для добавления
@@ -236,7 +265,15 @@ const handleSubmit = (): void => {
   
   const percentage = Number(currentSector.percentage)
   
+  // Дополнительная проверка суммы процентов
+  const total = store.sectors.reduce((sum, s) => sum + s.percentage, 0)
+  
   if (modalMode.value === 'add') {
+    if (total + percentage > 100) {
+      alert(`Сумма процентов не может превышать 100%. Доступно: ${100 - total}%`)
+      return
+    }
+    
     // Используем action из store
     store.addSector({
       name: currentSector.name,
@@ -244,6 +281,15 @@ const handleSubmit = (): void => {
       color: currentSector.color
     })
   } else if (editingSectorId.value !== null) {
+    const sector = store.sectors.find(s => s.id === editingSectorId.value)
+    if (sector) {
+      const newTotal = total - sector.percentage + percentage
+      if (newTotal > 100) {
+        alert(`Сумма процентов не может превышать 100%. Максимум: ${100 - (total - sector.percentage)}%`)
+        return
+      }
+    }
+    
     // Используем action из store
     store.updateSector(editingSectorId.value, {
       name: currentSector.name,
