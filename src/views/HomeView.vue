@@ -136,13 +136,6 @@
                 >
                   Показать иконку
                 </button>
-                <button
-                  @click="playground.showText = true; playground.showIcon = true"
-                  :class="{ active: playground.showText && playground.showIcon }"
-                  :disabled="isBothDisabled"
-                >
-                  Оба
-                </button>
               </div>
             </div>
           </div>
@@ -156,7 +149,6 @@
               :stroke-width="10"
               :show-text="playground.showText"
               :show-status-icon="playground.showIcon"
-              :hide-text-for-status="playground.status !== 'inProgress'"
             />
             
             <div class="preview-info">
