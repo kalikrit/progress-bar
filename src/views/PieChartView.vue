@@ -105,8 +105,13 @@
               v-model="currentSector.name"
               type="text"
               class="name-input"
+              :class="{ 'error-input': nameError }"
               placeholder="Наименование"
+              @input="validateNameWithDelay"
             />
+            <div v-if="nameError" class="error-message">
+              {{ nameError }}
+            </div>
           </div>
 
         <div class="form-field">
@@ -193,6 +198,36 @@ const editingSectorId = ref<number | null>(null)
 const percentageError = ref<string>('')
 let validationTimer: number | null = null
 
+// Состояние для ошибки имени
+const nameError = ref<string>('')
+let nameValidationTimer: number | null = null
+
+// Валидация имени с задержкой
+// Валидация имени с задержкой
+const validateNameWithDelay = () => {
+  if (nameValidationTimer) {
+    clearTimeout(nameValidationTimer)
+  }
+  
+  // ✅ Если поле пустое - показываем ошибку сразу, без задержки
+  if (currentSector.name.trim() === '') {
+    nameError.value = 'Название сектора не может быть пустым'
+    return
+  }
+  
+  nameValidationTimer = setTimeout(() => {
+    const name = currentSector.name.trim()
+    
+    if (name === '') {
+      nameError.value = 'Название сектора не может быть пустым'
+    } else if (name.length < 2) {
+      nameError.value = 'Название должно содержать минимум 2 символа'
+    } else {
+      nameError.value = ''
+    }
+  }, 2000) // 2 секунды только для проверки длины
+}
+
 // Данные текущего сектора (для формы)
 const currentSector = reactive<SectorFormData>({
   id: null,
@@ -208,6 +243,8 @@ const colorPresets = ref<string[]>([
   '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
   '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'
 ])
+
+const lastUsedColorIndex = ref(0)
 
 // Вычисляем максимальный доступный процент
 const getMaxPercentage = (): number => {
@@ -272,7 +309,9 @@ const isFormValid = computed(() => {
   
   return currentSector.name.trim() !== '' && 
          percentage >= 1 && 
-         percentage <= 100
+         percentage <= 100 &&
+         percentageError.value === '' && 
+         nameError.value === ''
 })
 
 // Открытие модального окна для добавления
@@ -280,9 +319,18 @@ const openAddModal = (): void => {
   modalMode.value = 'add'
   resetCurrentSector()
   percentageError.value = ''
-  if (validationTimer) {
-    clearTimeout(validationTimer)
-  }
+  nameError.value = ''
+  if (validationTimer) clearTimeout(validationTimer)
+  if (nameValidationTimer) clearTimeout(nameValidationTimer)
+
+  setTimeout(() => {
+    if (currentSector.name.trim() === '') {
+      nameError.value = 'Название сектора не может быть пустым'
+    }
+  }, 100) // Небольшая задержка, чтобы форма успела отрисоваться
+
+  currentSector.color = colorPresets.value[lastUsedColorIndex.value] ?? '#FF6384'
+  lastUsedColorIndex.value = (lastUsedColorIndex.value + 1) % colorPresets.value.length
   showModal.value = true
 }
 
@@ -292,10 +340,10 @@ const openEditModal = (sector: Sector): void => {
   editingSectorId.value = sector.id
 
   percentageError.value = ''
-  if (validationTimer) {
-    clearTimeout(validationTimer)
-  }
-  
+  nameError.value = ''
+  if (validationTimer) clearTimeout(validationTimer)
+  if (nameValidationTimer) clearTimeout(nameValidationTimer)
+
   // Заполняем форму данными редактируемого сектора
   currentSector.id = sector.id
   currentSector.name = sector.name
@@ -352,6 +400,10 @@ const closeModal = (): void => {
   showModal.value = false
   editingSectorId.value = null
   resetCurrentSector()
+  percentageError.value = ''
+  nameError.value = ''
+  if (validationTimer) clearTimeout(validationTimer)
+  if (nameValidationTimer) clearTimeout(nameValidationTimer)
 }
 
 // Сброс данных текущего сектора
@@ -696,6 +748,7 @@ const deleteSector = (id: number): void => {
   flex-direction: column;
   gap: 15px;
   flex: 1;
+  padding-top: 10px;
 }
 
 /* ПЛЕЙСХОЛДЕРЫ */
