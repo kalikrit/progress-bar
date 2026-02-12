@@ -109,18 +109,23 @@
             />
           </div>
 
-          <div class="form-field">
-            <div class="value-input-container">
-              <input 
-                v-model.number="currentSector.percentage"
-                type="number"
-                class="value-input"
-                :min="1"
-                :max="getMaxPercentage()"
-                placeholder="Значение"
-              />
+        <div class="form-field">
+          <div class="value-input-container">
+            <input 
+              v-model.number="currentSector.percentage"
+              type="number"
+              class="value-input"
+              :class="{ 'error-input': percentageError }"
+              :min="1"
+              :max="getMaxPercentage()"
+              placeholder="Значение"
+              @input="validatePercentageWithDelay"
+            />
+            <div v-if="percentageError" class="error-message">
+              {{ percentageError }}
             </div>
           </div>
+        </div>
 
           <div class="form-field">
             <div class="color-picker-container">
@@ -185,6 +190,8 @@ const store = usePieChartStore()
 const showModal = ref<boolean>(false)
 const modalMode = ref<ModalMode>('add')
 const editingSectorId = ref<number | null>(null)
+const percentageError = ref<string>('')
+let validationTimer: number | null = null
 
 // Данные текущего сектора (для формы)
 const currentSector = reactive<SectorFormData>({
@@ -217,6 +224,36 @@ const getMaxPercentage = (): number => {
   return 100
 }
 
+// Валидация с задержкой
+const validatePercentageWithDelay = () => {
+  if (validationTimer) {
+    clearTimeout(validationTimer)
+  }
+  
+  validationTimer = setTimeout(() => {
+    const percentage = Number(currentSector.percentage)
+    const total = store.sectors.reduce((sum, s) => sum + s.percentage, 0)
+    
+    if (modalMode.value === 'add') {
+      if (total + percentage > 100) {
+        percentageError.value = `Сумма превысит 100%! Доступно: ${100 - total}%`
+      } else {
+        percentageError.value = ''
+      }
+    } else if (editingSectorId.value !== null) {
+      const sector = store.sectors.find(s => s.id === editingSectorId.value)
+      if (sector) {
+        const newTotal = total - sector.percentage + percentage
+        if (newTotal > 100) {
+          percentageError.value = `Сумма превысит 100%! Максимум: ${100 - (total - sector.percentage)}%`
+        } else {
+          percentageError.value = ''
+        }
+      }
+    }
+  }, 1500) // 1.5 секунды
+}
+
 // Валидация формы
 const isFormValid = computed(() => {
   const percentage = Number(currentSector.percentage)
@@ -242,6 +279,10 @@ const isFormValid = computed(() => {
 const openAddModal = (): void => {
   modalMode.value = 'add'
   resetCurrentSector()
+  percentageError.value = ''
+  if (validationTimer) {
+    clearTimeout(validationTimer)
+  }
   showModal.value = true
 }
 
@@ -249,6 +290,11 @@ const openAddModal = (): void => {
 const openEditModal = (sector: Sector): void => {
   modalMode.value = 'edit'
   editingSectorId.value = sector.id
+
+  percentageError.value = ''
+  if (validationTimer) {
+    clearTimeout(validationTimer)
+  }
   
   // Заполняем форму данными редактируемого сектора
   currentSector.id = sector.id
@@ -410,6 +456,22 @@ const deleteSector = (id: number): void => {
   gap: 10px;
   flex-wrap: wrap;
   margin-bottom: 10px;
+}
+
+.error-input {
+  border-color: #ef4444 !important;
+}
+
+.error-input:focus {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+.error-message {
+  color: #ef4444;
+  font-size: 12px;
+  margin-top: 5px;
+  padding-left: 5px;
 }
 
 @media (min-width: 768px) {
