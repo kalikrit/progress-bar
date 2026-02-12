@@ -157,7 +157,6 @@
               <p><strong>Тип:</strong> {{ typeLabels[playground.type] }}</p>
               <p><strong>Режим:</strong> 
                 {{ playground.showText ? 'Текст' : '' }}
-                {{ playground.showText && playground.showIcon ? '+ ' : '' }}
                 {{ playground.showIcon ? 'Иконка' : '' }}
               </p>
             </div>
