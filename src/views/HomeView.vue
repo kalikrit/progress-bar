@@ -52,7 +52,7 @@
 
       <!-- Status Examples -->
       <section class="demo-section">
-        <h2>Примеры Состояний</h2>
+        <h2>Примеры Состояний с Иконками</h2>
         <div class="status-grid">
           <div 
             v-for="statusExample in statusExamples" 
@@ -132,12 +132,14 @@
                 <button
                   @click="playground.showText = false; playground.showIcon = true"
                   :class="{ active: !playground.showText && playground.showIcon }"
+                  :disabled="isIconDisabled"
                 >
                   Show Icon
                 </button>
                 <button
                   @click="playground.showText = true; playground.showIcon = true"
                   :class="{ active: playground.showText && playground.showIcon }"
+                  :disabled="isBothDisabled"
                 >
                   Both
                 </button>
@@ -170,60 +172,6 @@
           </div>
         </div>
       </section>
-
-      <!-- Status Icons Showcase -->
-      <section class="demo-section">
-        <h2>Демонстрация Иконок Состояний</h2>
-        <div class="icons-showcase">
-          <div class="icon-example">
-            <h3>Success (100%)</h3>
-            <CircularProgressBar 
-              :model-value="100"
-              status="success"
-              :size="100"
-              :show-text="false"
-              :show-status-icon="true"
-            />
-            <p>Green checkmark icon</p>
-          </div>
-          
-          <div class="icon-example">
-            <h3>Warning (85%)</h3>
-            <CircularProgressBar 
-              :model-value="85"
-              status="warning"
-              :size="100"
-              :show-text="false"
-              :show-status-icon="true"
-            />
-            <p>Yellow warning triangle</p>
-          </div>
-          
-          <div class="icon-example">
-            <h3>Error (30%)</h3>
-            <CircularProgressBar 
-              :model-value="30"
-              status="error"
-              :size="100"
-              :show-text="false"
-              :show-status-icon="true"
-            />
-            <p>Red cross icon</p>
-          </div>
-          
-          <div class="icon-example">
-            <h3>In Progress (65%)</h3>
-            <CircularProgressBar 
-              :model-value="65"
-              status="inProgress"
-              :size="100"
-              :show-text="true"
-              :show-status-icon="false"
-            />
-            <p>Dynamic color + percentage</p>
-          </div>
-        </div>
-      </section>
     </main>
 
     <footer class="footer">
@@ -234,7 +182,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import CircularProgressBar from '../components/CircularProgressBar.vue';
 
 // Basic example
@@ -276,6 +224,14 @@ const playground = ref({
   type: 'circle' as 'circle' | 'dashboard',
   showText: true,
   showIcon: false,
+});
+
+const isIconDisabled = computed(() => {
+  return playground.value.status === 'inProgress';
+});
+
+const isBothDisabled = computed(() => {
+  return playground.value.status === 'inProgress';
 });
 
 const setPlaygroundType = (type: 'circle' | 'dashboard') => {
@@ -525,6 +481,18 @@ const setPlaygroundStatus = (status: typeof statusOptions[number]) => {
   background: #4299e1;
   color: white;
   border-color: #4299e1;
+}
+
+.button-group button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+
+.button-group button:disabled:hover {
+  background: #f3f4f6;
+  transform: none;
 }
 
 .playground-preview {
