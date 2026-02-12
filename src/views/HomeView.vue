@@ -11,7 +11,7 @@
         <h2>Основные Примеры</h2>
         <div class="examples">
           <div class="example-card">
-            <h3>Default Progress Bar</h3>
+            <h3>Обычный прогресс-бар</h3>
             <CircularProgressBar 
               :model-value="basicProgress" 
               :size="100"
@@ -29,7 +29,7 @@
           </div>
 
         <div class="example-card">
-            <h3>Dashboard Type</h3>
+            <h3>Дашборд (270°)</h3>
             <CircularProgressBar 
                 :model-value="dashboardProgress"
                 type="dashboard"
@@ -82,7 +82,7 @@
         <div class="playground">
           <div class="playground-controls">
             <div class="control-group">
-              <label>Progress: {{ playground.progress }}%</label>
+              <label>Прогресс: {{ playground.progress }}%</label>
               <input 
                 type="range" 
                 v-model.number="playground.progress" 
@@ -93,7 +93,7 @@
             </div>
 
             <div class="control-group">
-              <label>Status</label>
+              <label>Статус</label>
               <div class="button-group">
                 <button
                   v-for="status in statusOptions"
@@ -107,7 +107,7 @@
             </div>
 
             <div class="control-group">
-              <label>Type</label>
+              <label>Тип</label>
               <div class="button-group">
                 <button
                   v-for="type in typeOptions"
@@ -121,27 +121,27 @@
             </div>
 
             <div class="control-group">
-              <label>Display Mode</label>
+              <label>Режим отображения</label>
               <div class="button-group">
                 <button
                   @click="playground.showText = true; playground.showIcon = false"
                   :class="{ active: playground.showText && !playground.showIcon }"
                 >
-                  Show Text
+                 Показать текст
                 </button>
                 <button
                   @click="playground.showText = false; playground.showIcon = true"
                   :class="{ active: !playground.showText && playground.showIcon }"
                   :disabled="isIconDisabled"
                 >
-                  Show Icon
+                  Показать иконку
                 </button>
                 <button
                   @click="playground.showText = true; playground.showIcon = true"
                   :class="{ active: playground.showText && playground.showIcon }"
                   :disabled="isBothDisabled"
                 >
-                  Both
+                  Оба
                 </button>
               </div>
             </div>
@@ -160,13 +160,13 @@
             />
             
             <div class="preview-info">
-              <p><strong>Current Value:</strong> {{ playground.progress }}%</p>
-              <p><strong>Status:</strong> {{ statusLabels[playground.status] }}</p>
-              <p><strong>Type:</strong> {{ typeLabels[playground.type] }}</p>
-              <p><strong>Display:</strong> 
-                {{ playground.showText ? 'Text' : '' }}
+              <p><strong>Текущие настройки:</strong> {{ playground.progress }}%</p>
+              <p><strong>Статус:</strong> {{ statusLabels[playground.status] }}</p>
+              <p><strong>Тип:</strong> {{ typeLabels[playground.type] }}</p>
+              <p><strong>Режим:</strong> 
+                {{ playground.showText ? 'Текст' : '' }}
                 {{ playground.showText && playground.showIcon ? '+ ' : '' }}
-                {{ playground.showIcon ? 'Icon' : '' }}
+                {{ playground.showIcon ? 'Иконка' : '' }}
               </p>
             </div>
           </div>
@@ -175,7 +175,7 @@
     </main>
 
     <footer class="footer">
-      <p>Vue 3 Circular Progress Bar Component</p>
+      <p>Vue 3 Круговой Прогресс Бар</p>
       <p>Built with Vue 3 Composition API & SVG</p>
     </footer>
   </div>
@@ -195,25 +195,25 @@ const statusExamples = ref([
     status: 'inProgress' as const, 
     value: 65, 
     label: 'In Progress', 
-    description: 'Color changes with progress' 
+    description: 'Цвет изменяется с прогрессом' 
   },
   { 
     status: 'success' as const, 
     value: 100, 
     label: 'Success', 
-    description: 'Green checkmark icon' 
+    description: 'Зеленая галочка' 
   },
   { 
     status: 'warning' as const, 
     value: 85, 
     label: 'Warning', 
-    description: 'Yellow warning triangle' 
+    description: 'Желтый треугольник' 
   },
   { 
     status: 'error' as const, 
     value: 30, 
     label: 'Error', 
-    description: 'Red cross icon' 
+    description: 'Красный крестик' 
   },
 ]);
 
