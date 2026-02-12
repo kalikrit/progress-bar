@@ -30,15 +30,13 @@
 
       <!-- Progress circle -->
       <circle
-        ref="progressCircleRef"
-        class="progress-circle"
         :cx="center"
         :cy="center"
         :r="radius"
-        :stroke-width="strokeWidth"
         fill="none"
-        :stroke-dasharray="circumference"
-        :stroke-dashoffset="dashOffset"
+        :stroke="currentColor"
+        :stroke-width="strokeWidth"
+        :stroke-dasharray="strokeDasharray"
         :stroke-linecap="strokeLinecap"
         :transform="`rotate(${rotationAngle} ${center} ${center})`"
       />
@@ -186,7 +184,7 @@ const radius = computed(() => {
 const circumference = computed(() => 2 * Math.PI * radius.value);
 
 const rotationAngle = computed(() => {
-  return props.type === 'dashboard' ? -90 : 0;
+  return props.type === 'dashboard' ? -180 - 45: 0;
 });
 
 const effectiveCircumference = computed(() => {
@@ -200,6 +198,7 @@ const strokeLinecap = computed(() => {
   return props.type === 'dashboard' ? 'round' : 'butt';
 });
 
+
 const normalizedProgress = computed(() => {
   const range = props.max - props.min;
   if (range === 0) return 0;
@@ -212,6 +211,19 @@ const dashOffset = computed(() => {
   const progress = currentAnimatedValue.value;
   const progressOffset = (progress / 100) * effectiveCircumference.value;
   return effectiveCircumference.value - progressOffset;
+});
+
+const strokeDasharray = computed(() => {
+  if (props.type === 'dashboard') {
+    // Используем effectiveCircumference для 270°
+    const dashboardCircumference = circumference.value * 0.75; // 270 градусов
+    const dashLength = (normalizedProgress.value / 100) * dashboardCircumference;
+    return `${dashLength} ${circumference.value}`;
+  }
+  
+  // Для circle типа - полный круг
+  const dashLength = (normalizedProgress.value / 100) * circumference.value;
+  return `${dashLength} ${circumference.value}`;
 });
 
 const displayText = computed(() => {
