@@ -20,11 +20,13 @@ export const usePieChartStore = defineStore('pieChart', () => {
   })
   
   const sectorsWithAngles = computed<SectorWithAngles[]>(() => {
-    const total = totalPercentage.value
+    const total = 100
+    
     let currentAngle = 0
     
     return sectors.value.map(sector => {
       const angle = (sector.percentage / total) * 360
+      
       const startAngle = currentAngle
       const endAngle = currentAngle + angle
       
