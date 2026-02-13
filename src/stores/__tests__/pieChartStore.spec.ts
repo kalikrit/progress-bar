@@ -264,4 +264,23 @@ describe('PieChart Store - Регрессионные тесты', () => {
     expect(store.sectors[0].percentage).toBe(60)
     expect(store.totalPercentage).toBe(100)
   })
+
+  it('TC-PCS-16: При сумме 60% должно быть 40% пустого места (угол 216°)', () => {
+    const store = usePieChartStore()
+    
+    // Очищаем и добавляем сектора
+    store.sectors.forEach(s => store.deleteSector(s.id))
+    
+    store.addSector({ name: 'A', percentage: 30, color: '#f00' })
+    store.addSector({ name: 'B', percentage: 30, color: '#0f0' })
+    
+    const angles = store.sectorsWithAngles.map(s => s.angle)
+    const totalAngle = angles.reduce((sum, a) => sum + a, 0)
+    
+    // 60% от 360° = 216°
+    expect(totalAngle).toBeCloseTo(216, 1)
+    
+    // Проверяем, что сумма процентов = 60
+    expect(store.totalPercentage).toBe(60)
+  })  
 })

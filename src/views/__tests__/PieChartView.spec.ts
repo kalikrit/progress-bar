@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import PieChartView from '../PieChartView.vue'
@@ -6,18 +6,18 @@ import PieChartView from '../PieChartView.vue'
 describe('PieChartView - ColorPicker', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.clearAllTimers()
+    vi.restoreAllMocks()
   })
 
   it('TC-PCV-15: ColorPicker должен содержать 20 цветов (включая повторы)', () => {
     const wrapper = mount(PieChartView)
-    
-    // Получаем доступ к внутренним данным компонента
     const colorPresets = wrapper.vm.colorPresets
-    
-    // Проверяем количество (сейчас 20)
     expect(colorPresets.length).toBe(20)
-    
-    // Проверяем, что все цвета в формате HEX
     colorPresets.forEach((color: string) => {
       expect(color).toMatch(/^#[0-9A-Fa-f]{6}$/)
     })
@@ -26,7 +26,6 @@ describe('PieChartView - ColorPicker', () => {
   it('TC-PCV-16: При добавлении выбирается следующий цвет по кругу', async () => {
     const wrapper = mount(PieChartView)
     
-    // Открываем форму добавления 3 раза
     await wrapper.vm.openAddModal()
     const color1 = wrapper.vm.currentSector.color
     
@@ -38,8 +37,28 @@ describe('PieChartView - ColorPicker', () => {
     await wrapper.vm.openAddModal()
     const color3 = wrapper.vm.currentSector.color
     
-    // Цвета должны быть разными (или циклически повторяться)
     expect(color1).not.toBe(color2)
     expect(color2).not.toBe(color3)
+  })
+
+  describe('PieChartView - Валидация', () => {
+    beforeEach(() => {
+      setActivePinia(createPinia())
+      vi.useFakeTimers()
+    })
+
+    afterEach(() => {
+      vi.clearAllTimers()
+      vi.restoreAllMocks()
+    })
+
+    it('TC-PCV-08a: При открытии пустой формы появляется ошибка', async () => {
+      const wrapper = mount(PieChartView)
+      
+      await wrapper.vm.openAddModal()
+      vi.advanceTimersByTime(100)
+      
+      expect(wrapper.vm.nameError).toBe('Название сектора не может быть пустым')
+    })
   })
 })
