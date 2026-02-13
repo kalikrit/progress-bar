@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import type { Sector, SectorWithAngles } from '@/types/pieChart'
 
 export const usePieChartStore = defineStore('pieChart', () => {
@@ -25,8 +25,14 @@ export const usePieChartStore = defineStore('pieChart', () => {
     let currentAngle = 0
     
     return sectors.value.map(sector => {
-      const angle = (sector.percentage / total) * 360
+      let angle = (sector.percentage / total) * 360
       
+      // Если это единственный сектор и он 100% — отдаём 359.99° (почти полный круг)
+      if (sectors.value.length === 1 && sector.percentage === 100) {
+        // Chart.js не рисует сектор в 360°, даём чуть меньше
+        angle = 359.9999
+      }
+
       const startAngle = currentAngle
       const endAngle = currentAngle + angle
       
@@ -67,42 +73,57 @@ export const usePieChartStore = defineStore('pieChart', () => {
     
     return { success: true }
   }
-  
+
   const updateSector = (id: number, updates: Partial<Omit<Sector, 'id'>>): { success: boolean; message?: string } => {
-    const sectorToUpdate = sectors.value.find(sector => sector.id === id)
-    
-    if (!sectorToUpdate) {
-      return { success: false, message: 'Сектор не найден' }
-    }
-    
-    const currentTotal = totalPercentage.value
-    const currentSectorPercentage = sectorToUpdate.percentage
-    const newPercentage = updates.percentage !== undefined 
-      ? Number(updates.percentage) 
-      : currentSectorPercentage
-    
-    // Проверка суммы процентов при обновлении
-    const newTotal = currentTotal - currentSectorPercentage + newPercentage
-    
-    if (newTotal > 100) {
-      const maxAllowed = 100 - (currentTotal - currentSectorPercentage)
-      return {
-        success: false,
-        message: `Сумма процентов не может превышать 100%. Максимум для этого сектора: ${maxAllowed}%`
+      const sectorToUpdate = sectors.value.find(sector => sector.id === id)
+      
+      if (!sectorToUpdate) {
+        return { success: false, message: 'Сектор не найден' }
       }
-    }
-    
-    const index = sectors.value.indexOf(sectorToUpdate)
-    
-    const updatedSector: Sector = {
-      id: sectorToUpdate.id,
-      name: updates.name !== undefined ? updates.name : sectorToUpdate.name,
-      percentage: newPercentage,
-      color: updates.color !== undefined ? updates.color : sectorToUpdate.color
-    }
-    
-    sectors.value[index] = updatedSector
-    return { success: true }
+      
+      const currentTotal = totalPercentage.value
+      const currentSectorPercentage = sectorToUpdate.percentage
+      const newPercentage = updates.percentage !== undefined 
+        ? Number(updates.percentage) 
+        : currentSectorPercentage
+      
+      // Проверка суммы процентов при обновлении
+      const newTotal = currentTotal - currentSectorPercentage + newPercentage
+      
+      if (newTotal > 100) {
+        const maxAllowed = 100 - (currentTotal - currentSectorPercentage)
+        return {
+          success: false,
+          message: `Сумма процентов не может превышать 100%. Максимум для этого сектора: ${maxAllowed}%`
+        }
+      }
+      
+      const index = sectors.value.indexOf(sectorToUpdate)
+      
+      const updatedSector: Sector = {
+        id: sectorToUpdate.id,
+        name: updates.name !== undefined ? updates.name : sectorToUpdate.name,
+        percentage: newPercentage,
+        color: updates.color !== undefined ? updates.color : sectorToUpdate.color
+      }
+      
+      if (sectors.value.length === 1 && newPercentage === 100) {
+        // Сначала ставим 99.999%
+        sectors.value[index] = {
+          ...updatedSector,
+          percentage: 99.999
+        }
+        
+        // В следующем тике ставим 100%
+        setTimeout(() => {
+          sectors.value[index] = updatedSector
+        }, 10)
+      } else {
+        // Обычное обновление
+        sectors.value[index] = updatedSector
+      }
+      
+      return { success: true }
   }
   
   const deleteSector = (id: number) => {

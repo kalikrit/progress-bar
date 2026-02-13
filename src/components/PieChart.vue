@@ -86,6 +86,7 @@ const getChartOptions = () => {
           bottom: 30,
         },
       },
+      animation: false
     },
   };
 };
@@ -94,17 +95,22 @@ const getChartOptions = () => {
 const updateChart = () => {
   if (!chartCanvas.value) return;
 
+  // ✅ Всегда пересоздаём диаграмму при изменении данных
   if (chartInstance) {
-    chartInstance.data = getChartData();
-    chartInstance.options = getChartOptions();
-    chartInstance.update();
-  } else {
-    chartInstance = new Chart(chartCanvas.value, {
-      type: 'pie',
-      data: getChartData(),
-      options: getChartOptions(),
-    });
+    chartInstance.destroy();
+    chartInstance = null;
   }
+  
+  // Небольшая задержка перед созданием новой
+  setTimeout(() => {
+    if (chartCanvas.value) {
+      chartInstance = new Chart(chartCanvas.value, {
+        type: 'pie',
+        data: getChartData(),
+        options: getChartOptions(),
+      });
+    }
+  }, 10);
 };
 
 // Наблюдаем за изменениями данных

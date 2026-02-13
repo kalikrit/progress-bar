@@ -203,7 +203,6 @@ const nameError = ref<string>('')
 let nameValidationTimer: number | null = null
 
 // Валидация имени с задержкой
-// Валидация имени с задержкой
 const validateNameWithDelay = () => {
   if (nameValidationTimer) {
     clearTimeout(nameValidationTimer)
