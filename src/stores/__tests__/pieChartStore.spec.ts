@@ -169,4 +169,99 @@ describe('PieChart Store - Регрессионные тесты', () => {
     expect(store.totalPercentage).toBe(75)
     expect(store.remainingPercentage).toBe(25)
   })
+
+  it('должен блокировать добавление сектора, если сумма превысит 100%', () => {
+    const store = usePieChartStore()
+    // 3 сектора по 20% = 60%
+    
+    const result = store.addSector({ 
+        name: 'Новый', 
+        percentage: 50, // 60 + 50 = 110%
+        color: '#000' 
+    })
+    
+    expect(result.success).toBe(false)
+    expect(result.message).toContain('не может превышать 100%')
+    expect(store.sectors.length).toBe(3) // Не добавился
+  })
+  
+  it('должен блокировать редактирование, если новая сумма превысит 100%', () => {
+    const store = usePieChartStore()
+    // Сектора: 20%, 20%, 20% (сумма 60%)
+    
+    const sectorId = store.sectors[0].id // 20%
+    
+    const result = store.updateSector(sectorId, { percentage: 50 })
+    // Новая сумма: 60 - 20 + 50 = 90% (ок)
+    expect(result.success).toBe(true)
+    
+    const result2 = store.updateSector(sectorId, { percentage: 80 })
+    // Новая сумма: 60 - 20 + 80 = 120% (ошибка)
+    expect(result2.success).toBe(false)
+    expect(result2.message).toContain('не может превышать 100%')
+  })
+
+  it('TC-PCS-07: должен блокировать добавление сектора, если сумма превысит 100%', () => {
+    const store = usePieChartStore()
+    
+    // По умолчанию 3 сектора по 20% = 60%
+    expect(store.totalPercentage).toBe(60)
+    expect(store.sectors.length).toBe(3)
+    
+    // Пытаемся добавить сектор 50% (60+50=110%)
+    const result = store.addSector({ 
+        name: 'Новый', 
+        percentage: 50, 
+        color: '#000' 
+    })
+    
+    // Проверяем, что добавление не удалось
+    expect(result.success).toBe(false)
+    expect(result.message).toContain('не может превышать 100%')
+    
+    // Проверяем, что сектор не добавился
+    expect(store.sectors.length).toBe(3)
+    expect(store.totalPercentage).toBe(60)
+    
+    // Добавляем сектор 40% (60+40=100%)
+    const result2 = store.addSector({ 
+        name: 'Успех', 
+        percentage: 40, 
+        color: '#00f' 
+    })
+    
+    // Проверяем, что добавилось
+    expect(result2.success).toBe(true)
+    expect(store.sectors.length).toBe(4)
+    expect(store.totalPercentage).toBe(100)
+  })
+
+  it('TC-PCS-11: должен блокировать редактирование, если новая сумма превысит 100%', () => {
+    const store = usePieChartStore()
+    
+    // По умолчанию 3 сектора по 20% = 60%
+    expect(store.totalPercentage).toBe(60)
+    expect(store.sectors.length).toBe(3)
+    
+    const sectorId = store.sectors[0].id // первый сектор с 20%
+    
+    // Пытаемся увеличить до 50% (новая сумма: 60-20+50=90% - должно работать)
+    const result1 = store.updateSector(sectorId, { percentage: 50 })
+    expect(result1.success).toBe(true)
+    expect(store.totalPercentage).toBe(90)
+    
+    // Пытаемся увеличить до 60% (новая сумма: 90-50+60=100% - должно работать)
+    const result2 = store.updateSector(sectorId, { percentage: 60 })
+    expect(result2.success).toBe(true)
+    expect(store.totalPercentage).toBe(100)
+    
+    // Пытаемся увеличить до 61% (новая сумма: 100-60+61=101% - должно быть ошибкой)
+    const result3 = store.updateSector(sectorId, { percentage: 61 })
+    expect(result3.success).toBe(false)
+    expect(result3.message).toContain('не может превышать 100%')
+    
+    // Проверяем, что значение не изменилось
+    expect(store.sectors[0].percentage).toBe(60)
+    expect(store.totalPercentage).toBe(100)
+  })
 })
